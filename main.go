@@ -1,17 +1,32 @@
 package main
 
 import (
-	"golang-gorm/database"
+	"golang-gorm/handler"
+	"golang-gorm/middleware"
 	"log"
-	"time"
+	"net/http"
 )
 
+var port string = ":8080"
+
 func main() {
-	start := time.Now()
-	log.Println(start, start.Format(time.RFC3339))
+	mux := http.DefaultServeMux
+	mux.HandleFunc("/insertOne", handler.HandlePostOne)
+	mux.HandleFunc("/insertMultiple", handler.HandlePostMultiple)
+	mux.HandleFunc("/insertSelect", handler.HandlePostInsertSelect)
+	mux.HandleFunc("/association", handler.HandlePostAssociation)
 
-	database.Connect()
+	var handler http.Handler = mux
+	handler = middleware.MiddlewareBasicAuth(handler)
 
-	end := time.Since(start)
-	log.Printf("running on %s seconds\n", end.String())
+	var server http.Server
+	server.Addr = port
+	server.Handler = handler
+
+	log.Printf("server running on localhost%s\n", port)
+	err := server.ListenAndServe()
+	if err != nil {
+		panic(err.Error())
+	}
+
 }
